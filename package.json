@@ -4,5 +4,12 @@
   "main": "index.js",
   "repository": "https://github.com/shahin-cuet/block_certBD.git",
   "author": "Kamrul Islam Shahin <44506464+shahin-cuet@users.noreply.github.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "lite-server": "^2.5.3"
+  },
+
+  "scripts": {
+  	"dev":"lite-server"
+  }
 }
