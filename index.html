@@ -31,8 +31,8 @@
               <div class="card-text">
                 <p class="text-muted">This is to certify that </p>
                 <h5 id ="name"></h5>
-                <p class="text-muted">has completed the </p>
-                <h5>level <span  id ="level"></span> of the blockchain course</h5>
+                <p class="text-muted">have gotten </p>
+                <h5>CGPG <span  id ="cgpa"></span> in a scale of 4.</h5>
                 <p class="text-right mt-5""><img src="https://s3-ap-southeast-1.amazonaws.com/hashreader/hashcademy-logo.png" alt="" style="width: 180px;"></p>
               </div>
             </div>
@@ -42,11 +42,11 @@
           <h4 class="text-muted">Input the detail of certificate</h4>
               <div class="mb-3">
                 <label for="username">Full Name</label>
-                <input type="text" class="form-control" id="fullname" placeholder="Full Name" required>
+                <input type="text" class="form-control" id="fullName" placeholder="Full Name" required>
               </div>
               <div class="mb-3">
-                <label for="username">Level of Study</label>
-                <input type="text" class="form-control" id="levelOfStudy" placeholder="Level of Study" required>
+                <label for="username">Final CGPA</label>
+                <input type="text" class="form-control" id="finalCgpa" placeholder="Final CGPA" required>
               </div>
             <hr class="mb-4">
             <button id="button" class="btn btn-primary btn-lg btn-block">Register
@@ -55,7 +55,7 @@
       </div>
  
       <footer class="my-5 pt-5 text-muted text-center text-small">
-        <p class="mb-1">&copy; 2019 Hashcademy</p>
+        <p class="mb-1">&copy; 2019 CUET</p>
       </footer>
     </div>
  
@@ -67,6 +67,31 @@
     <script>
  
       // Input our code here 
+
+      // Set the provider you want from Web3.providers
+      web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
+
+      var contractAbi = [ { "constant": true, "inputs": [], "name": "name", "outputs": [ { "name": "", "type": "string" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [ { "name": "_name", "type": "string" }, { "name": "_cgpa", "type": "uint256" } ], "name": "setCertificate", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [], "name": "cgpa", "outputs": [ { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [], "name": "getCertificate", "outputs": [ { "name": "", "type": "string" }, { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" } ];
+
+      var contractAddress = "0xae08cd03c029be2801693374abb5e5996a9c0433";
+
+      async function init() {
+        CuetCertificate = await new web3.eth.Contract(contractAbi, contractAddress);
+        var accounts = await web3.eth.getAccounts();
+        web3.eth.defaultAccount = accounts[0];
+        CuetCertificate.methods.getCertificate().call().then(function(result){
+          document.getElementById('name').textContent = result[0];
+          document.getElementById('cgpa').textContent = result[1];
+        });
+      }
+      init();
+
+      async function register(){
+        var fullName = document.getElementById('fullName').value;
+        var finalCgpa = document.getElementById('finalCgpa').value;
+        CuetCertificate.methods.setCertificate(fullName, finalCgpa).send({from: web3.eth.defaultAccount}).then(console.log);
+      }
+      document.getElementById('button').addEventListener('click', register);
       
     </script>
   </body>
