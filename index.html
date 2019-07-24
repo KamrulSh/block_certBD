@@ -10,6 +10,7 @@
      <!-- web3.js 1.0.0 -->    
     <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.36/dist/web3.min.js" integrity="sha256-nWBTbvxhJgjslRyuAKJHK+XcZPlCnmIAAMixz6EefVk=" crossorigin="anonymous"></script>
  
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/0.9.0rc1/jspdf.min.js"></script>
  
     <title>Register Certificate on Blockchain</title>
   </head>
@@ -17,40 +18,61 @@
  
     <div class="container">
       <div class="py-5 text-center">
-        <h2>Register Certificate on Blockchain</h2>
+        <h2>Register Certificate on Blockchain (Adminstrator)</h2>
       </div>
  
       <div class="row">
         <div class="col-md-8 order-md-2">
           <h4 class="d-flex justify-content-between align-items-center mb-3">
             <span>Detail of your certificate</span>
+            <span id ="countHolders" class="badge badge-secondary badge-pill">0</span>
           </h4>
-          <div class="card d-flex px-5 py-5">
-            <div class="card-body py-5">
-              <h1 class="card-title text-center mb-5">Certificate of Completion</h1>
+          <div class="card d-flex px-3 py-3" id="createPDF">
+            <div class="card-body py-3">
+              <h3 class="card-title text-center mb-5">Chittagong University of Engineering and Technology</h3>
+              <p class="text-center mt-3"><img src="cuetlogo.png" alt="" style="width: 200px;"></p>
+              <h4 class="card-title text-center mb-5">Graduation Certificate</h4>
               <div class="card-text">
-                <p class="text-muted">This is to certify that </p>
-                <h5 id ="name"></h5>
-                <p class="text-muted">have gotten </p>
-                <h5>CGPG <span  id ="cgpa"></span> in a scale of 4.</h5>
-                <p class="text-right mt-5""><img src="https://s3-ap-southeast-1.amazonaws.com/hashreader/hashcademy-logo.png" alt="" style="width: 180px;"></p>
+                <p class="text-muted">Subject to the approval of the Academic Council</p>
+                <h5 id ="name" class="text-center"></h5>
+                <h5> ID <span id="roll"></span></h5>
+                <p class="text-muted">has completed the degree of Bachelor of Science in</p>
+                <h5 id ="dept" class="text-center"></h5>
+                <h5> in <span id="date"></span></h5>
+                <h5>His/Her grade point average is <span id ="cgpa"></span> out of 4.</h5>
               </div>
+              <p> Block Hash: <span id="blockHash"></span></p>
             </div>
           </div>
         </div>
         <div class="col-md-4 order-md-1">
           <h4 class="text-muted">Input the detail of certificate</h4>
               <div class="mb-3">
+                <p id="error" class="text-danger"></p>
                 <label for="username">Full Name</label>
                 <input type="text" class="form-control" id="fullName" placeholder="Full Name" required>
               </div>
               <div class="mb-3">
-                <label for="username">Final CGPA</label>
-                <input type="text" class="form-control" id="finalCgpa" placeholder="Final CGPA" required>
+                <label for="username">Student ID</label>
+                <input type="text" class="form-control" id="studentId" placeholder="Student ID" required>
+              </div>
+              <div class="mb-3">
+                <label for="username">Department</label>
+                <input type="text" class="form-control" id="deptName" placeholder="Department" required>
+              </div>
+              <div class="mb-3">
+                <label for="username">Graduation Date</label>
+                <input type="text" class="form-control" id="gradDate" placeholder="Graduation Date" required>
+              </div>
+              <div class="mb-3">
+                <label for="username">CGPA</label>
+                <input type="text" class="form-control" id="stuCgpa" placeholder="CGPA" required>
               </div>
             <hr class="mb-4">
-            <button id="button" class="btn btn-primary btn-lg btn-block">Register
-            </button>
+            <button id="button" class="btn btn-primary btn-lg btn-block">Register</button>
+            <hr class="mb-4">
+            <div id="editor"></div>
+            <button id="buttonPDF" class="btn btn-danger btn-lg btn-block">Download PDF</button>
         </div>
       </div>
  
@@ -68,34 +90,77 @@
  
       // Input our code here 
 
-      // Set the provider you want from Web3.providers
-      web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
+      web3 = new Web3(web3.currentProvider);
 
-      var contractAbi = [ { "constant": true, "inputs": [], "name": "name", "outputs": [ { "name": "", "type": "string" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [ { "name": "_name", "type": "string" }, { "name": "_cgpa", "type": "uint256" } ], "name": "setCertificate", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [], "name": "cgpa", "outputs": [ { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [], "name": "getCertificate", "outputs": [ { "name": "", "type": "string" }, { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "anonymous": false, "inputs": [ { "indexed": false, "name": "name", "type": "string" }, { "indexed": false, "name": "cgpa", "type": "uint256" } ], "name": "Certificate", "type": "event" } ];
+      /*if (typeof web3 !== 'undefined') {
+        web3 = new Web3(web3.currentProvider);
+      } else {
+        // Set the provider you want from Web3.providers
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
+      }*/
+      
+      var abi = [ { "constant": false, "inputs": [ { "name": "_address", "type": "address" }, { "name": "_name", "type": "string" }, { "name": "_roll", "type": "uint256" }, { "name": "_dept", "type": "string" }, { "name": "_date", "type": "string" }, { "name": "_cgpa", "type": "string" } ], "name": "setHolder", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [], "name": "countHolders", "outputs": [ { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [], "name": "getHolders", "outputs": [ { "name": "", "type": "address[]" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "uint256" } ], "name": "holderAccts", "outputs": [ { "name": "", "type": "address" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [ { "name": "_address", "type": "address" } ], "name": "getHolder", "outputs": [ { "name": "", "type": "string" }, { "name": "", "type": "uint256" }, { "name": "", "type": "string" }, { "name": "", "type": "string" }, { "name": "", "type": "string" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "anonymous": false, "inputs": [ { "indexed": false, "name": "name", "type": "string" }, { "indexed": false, "name": "roll", "type": "uint256" }, { "indexed": false, "name": "dept", "type": "string" }, { "indexed": false, "name": "date", "type": "string" }, { "indexed": false, "name": "cgpa", "type": "string" } ], "name": "HolderInfo", "type": "event" } ];
 
-      var contractAddress = "0x40f9736ae923ad8ee52c09c9cd9c12f95a7231b3";
+      var contractAddress = "0x9a1737b271143c8ceb4c5426c5cdb96d58ea44c4";
 
-      async function init() {
-        CuetCertificate = await new web3.eth.Contract(contractAbi, contractAddress);
+      async function init(){
+        Hashcademy = await new web3.eth.Contract(abi, contractAddress);
         var accounts = await web3.eth.getAccounts();
         web3.eth.defaultAccount = accounts[0];
-        /*CuetCertificate.methods.getCertificate().call().then(function(result){
-          document.getElementById('name').textContent = result[0];
-          document.getElementById('cgpa').textContent = result[1];
-        });*/
       }
       init();
 
-      async function register(){
-        var fullName = document.getElementById('fullName').value;
-        var finalCgpa = document.getElementById('finalCgpa').value;
-        CuetCertificate.methods.setCertificate(fullName, finalCgpa).send({from: web3.eth.defaultAccount}).on('receipt', function(receipt){
-          document.getElementById('name').textContent = receipt.events.Certificate.returnValues.name;
-          document.getElementById('cgpa').textContent = result.events.Certificate.returnValues.cgpa;
+      async function count(){
+        Hashcademy.methods.countHolders().call().then(function(result){
+          document.getElementById('countHolders').textContent = result;
         });
       }
+
+      async function register(){
+        var fullName = web3.utils.asciiToHex(document.getElementById('fullName').value);
+        var studentId = document.getElementById('studentId').value;
+        var deptName = web3.utils.asciiToHex(document.getElementById('deptName').value);
+        var gradDate = web3.utils.asciiToHex(document.getElementById('gradDate').value);
+        var stuCgpa = document.getElementById('stuCgpa').value;
+        Hashcademy.methods.setHolder(web3.eth.defaultAccount, fullName, studentId, deptName, gradDate, stuCgpa).send({from: web3.eth.defaultAccount, gas: 3000000}).on('receipt', function(receipt){
+          document.getElementById('error').style.display = 'none';
+          document.getElementById('blockHash').textContent = receipt.blockHash;
+          document.getElementById('name').textContent = web3.utils.hexToAscii(receipt.events.HolderInfo.returnValues.name);
+          document.getElementById('roll').textContent = receipt.events.HolderInfo.returnValues.roll;
+          document.getElementById('dept').textContent = web3.utils.hexToAscii(receipt.events.HolderInfo.returnValues.dept);
+          document.getElementById('date').textContent = web3.utils.hexToAscii(receipt.events.HolderInfo.returnValues.date);
+          document.getElementById('cgpa').textContent = receipt.events.HolderInfo.returnValues.cgpa;
+          count();
+        }).on('error', function(error){
+          document.getElementById('error').style.display = 'block';
+          document.getElementById('error').textContent = error;
+        });
+      }
+
       document.getElementById('button').addEventListener('click', register);
-      
+
+
+      // create pdf file
+
+      //function generatePDF() {
+        var pdf = new jsPDF(); //'v', 'pt', "a4"
+        var specialElementHandlers = {
+        '#editor': function (element, renderer) {
+            return true;
+          }
+        };
+
+        $('#buttonPDF').click(function () {
+            pdf.fromHTML($('#createPDF').html(), 10, 10, {
+                'height': 80,
+                //'orientation': landscape,
+                'elementHandlers': specialElementHandlers
+            });
+            pdf.save('cert.pdf');
+        });
+        //}
+      //document.getElementById('buttonPDF').addEventListener('click', generatePDF);
+
     </script>
   </body>
 </html>
