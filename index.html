@@ -71,25 +71,28 @@
       // Set the provider you want from Web3.providers
       web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
 
-      var contractAbi = [ { "constant": true, "inputs": [], "name": "name", "outputs": [ { "name": "", "type": "string" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [ { "name": "_name", "type": "string" }, { "name": "_cgpa", "type": "uint256" } ], "name": "setCertificate", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [], "name": "cgpa", "outputs": [ { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [], "name": "getCertificate", "outputs": [ { "name": "", "type": "string" }, { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" } ];
+      var contractAbi = [ { "constant": true, "inputs": [], "name": "name", "outputs": [ { "name": "", "type": "string" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [ { "name": "_name", "type": "string" }, { "name": "_cgpa", "type": "uint256" } ], "name": "setCertificate", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [], "name": "cgpa", "outputs": [ { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [], "name": "getCertificate", "outputs": [ { "name": "", "type": "string" }, { "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "anonymous": false, "inputs": [ { "indexed": false, "name": "name", "type": "string" }, { "indexed": false, "name": "cgpa", "type": "uint256" } ], "name": "Certificate", "type": "event" } ];
 
-      var contractAddress = "0xae08cd03c029be2801693374abb5e5996a9c0433";
+      var contractAddress = "0x40f9736ae923ad8ee52c09c9cd9c12f95a7231b3";
 
       async function init() {
         CuetCertificate = await new web3.eth.Contract(contractAbi, contractAddress);
         var accounts = await web3.eth.getAccounts();
         web3.eth.defaultAccount = accounts[0];
-        CuetCertificate.methods.getCertificate().call().then(function(result){
+        /*CuetCertificate.methods.getCertificate().call().then(function(result){
           document.getElementById('name').textContent = result[0];
           document.getElementById('cgpa').textContent = result[1];
-        });
+        });*/
       }
       init();
 
       async function register(){
         var fullName = document.getElementById('fullName').value;
         var finalCgpa = document.getElementById('finalCgpa').value;
-        CuetCertificate.methods.setCertificate(fullName, finalCgpa).send({from: web3.eth.defaultAccount}).then(console.log);
+        CuetCertificate.methods.setCertificate(fullName, finalCgpa).send({from: web3.eth.defaultAccount}).on('receipt', function(receipt){
+          document.getElementById('name').textContent = receipt.events.Certificate.returnValues.name;
+          document.getElementById('cgpa').textContent = result.events.Certificate.returnValues.cgpa;
+        });
       }
       document.getElementById('button').addEventListener('click', register);
       
